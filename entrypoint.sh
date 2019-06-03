@@ -74,7 +74,7 @@ initialize_system() {
   APP_ENV=${APP_ENV:-production}
   APP_DEBUG=${APP_DEBUG:-false}
   APP_URL=${APP_URL:-http://localhost}
-  APP_TIMEZONE=${APP_TIMEZONE:-UTC}
+  APP_TIMEZONE=${APP_TIMEZONE:-}
   DEBUGBAR_ENABLED=${DEBUGBAR_ENABLED:-false}
 
 
@@ -166,7 +166,7 @@ initialize_system() {
   sed 's,MAIL_PORT=.*,MAIL_PORT='"${MAIL_PORT}"',g' -i /var/www/html/.env
   sed 's,MAIL_USERNAME=.*,MAIL_USERNAME='"${MAIL_USERNAME}"',g' -i /var/www/html/.env
   sed 's,MAIL_PASSWORD=.*,MAIL_PASSWORD='"${MAIL_PASSWORD}"',g' -i /var/www/html/.env
-  sed 's,MAIL_ADDRESS=.*,MAIL_ADDRESS='"${MAIL_ADDRESS}"',g' -i /var/www/html/.env
+  sed 's,MAIL_ADDRESS=.*,MAIL_ADDRESS="'${MAIL_ADDRESS}'",g' -i /var/www/html/.env
   sed 's,MAIL_NAME=.*,MAIL_NAME='"${MAIL_NAME}"',g' -i /var/www/html/.env
   sed 's,MAIL_ENCRYPTION=.*,MAIL_ENCRYPTION='"${MAIL_ENCRYPTION}"',g' -i /var/www/html/.env
 
