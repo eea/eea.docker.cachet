@@ -7,7 +7,7 @@ ARG cachet_url
 ARG cachet_branch
 ARG cachet_commit
 
-ENV cachet_commit ${cachet_commit:-c1912655da3a43de8f861b58dd74a362f229060e}
+ENV cachet_commit ${cachet_commit:-86f523d996f8d3b93fad3d1e102cd304fb50322b}
 ENV cachet_url ${cachet_url:-https://github.com/CachetHQ/Cachet.git}
 ENV cachet_branch ${cachet_branch:-2.4}
 
