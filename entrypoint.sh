@@ -119,7 +119,7 @@ initialize_system() {
   MAIL_PASSWORD=${MAIL_PASSWORD:-}
   MAIL_ADDRESS=${MAIL_ADDRESS:-}
   MAIL_NAME=${MAIL_NAME:-}
-  MAIL_ENCRYPTION=${MAIL_ENCRYPTION:}
+  MAIL_ENCRYPTION=${MAIL_ENCRYPTION:-}
 
   REDIS_HOST=${REDIS_HOST:-}
   REDIS_DATABASE=${REDIS_DATABASE:-}
@@ -138,7 +138,6 @@ initialize_system() {
   TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
 
 
-  mv  /var/www/html/.env.example  /var/www/html/.env
   # configure env file
 
   sed 's,APP_ENV=.*,APP_ENV='"${APP_ENV}"',g' -i /var/www/html/.env
@@ -174,7 +173,6 @@ initialize_system() {
   sed 's,REDIS_HOST=.*,REDIS_HOST='"${REDIS_HOST}"',g' -i /var/www/html/.env
   sed 's,REDIS_DATABASE=.*,REDIS_DATABASE='"${REDIS_DATABASE}"',g' -i /var/www/html/.env
   sed 's,REDIS_PORT=.*,REDIS_PORT='"${REDIS_PORT}"',g' -i /var/www/html/.env
-  sed 's,REDIS_PASSWORD=.*,REDIS_PASSWORD='"${REDIS_PASSWORD}"',g' -i /var/www/html/.env
 
   sed 's,GITHUB_TOKEN=.*,GITHUB_TOKEN='"${GITHUB_TOKEN}"',g' -i /var/www/html/.env
 
