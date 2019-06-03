@@ -74,7 +74,7 @@ initialize_system() {
   APP_ENV=${APP_ENV:-production}
   APP_DEBUG=${APP_DEBUG:-false}
   APP_URL=${APP_URL:-http://localhost}
-  APP_TIMEZONE=${APP_TIMEZONE:-}
+  APP_TIMEZONE=${APP_TIMEZONE:-UTC}
   DEBUGBAR_ENABLED=${DEBUGBAR_ENABLED:-false}
 
 
