@@ -75,6 +75,7 @@ initialize_system() {
   APP_DEBUG=${APP_DEBUG:-false}
   APP_URL=${APP_URL:-http://localhost}
   APP_TIMEZONE=${APP_TIMEZONE:-UTC}
+  DEBUGBAR_ENABLED=${DEBUGBAR_ENABLED:-false}
 
 
   DB_DRIVER=${DB_DRIVER:-pgsql}
@@ -104,14 +105,11 @@ initialize_system() {
   fi
 
   CACHE_DRIVER=${CACHE_DRIVER:-file}
-
   SESSION_DRIVER=${SESSION_DRIVER:-file}
-#  SESSION_DOMAIN=${SESSION_DOMAIN:-apc}
-#  SESSION_SECURE_COOKIE=${SESSION_SECURE_COOKIE:-}
-
   QUEUE_DRIVER=${QUEUE_DRIVER:-sync}
+
   CACHET_EMOJI=${CACHET_EMOJI:-false}
-  CACHET_BEACON=${CACHET_BEACON:-true}
+  CACHET_BEACON=${CACHET_BEACON:-false}
   CACHET_AUTO_TWITTER=${CACHET_AUTO_TWITTER:-true}
 
   MAIL_DRIVER=${MAIL_DRIVER:-smtp}
@@ -121,12 +119,11 @@ initialize_system() {
   MAIL_PASSWORD=${MAIL_PASSWORD:-}
   MAIL_ADDRESS=${MAIL_ADDRESS:-}
   MAIL_NAME=${MAIL_NAME:-}
-  MAIL_ENCRYPTION=${MAIL_ENCRYPTION:-}
+  MAIL_ENCRYPTION=${MAIL_ENCRYPTION:tls}
 
   REDIS_HOST=${REDIS_HOST:-}
   REDIS_DATABASE=${REDIS_DATABASE:-}
   REDIS_PORT=${REDIS_PORT:-}
-  REDIS_PASSWORD=${REDIS_PASSWORD:-}
 
   DOCKER=true
 
@@ -148,6 +145,8 @@ initialize_system() {
   sed 's,APP_DEBUG=.*,APP_DEBUG='"${APP_DEBUG}"',g' -i /var/www/html/.env
   sed 's,APP_URL=.*,APP_URL='"${APP_URL}"',g' -i /var/www/html/.env
   sed 's,APP_TIMEZONE=.*,APP_TIMEZONE='"${APP_TIMEZONE}"',g' -i /var/www/html/.env
+  sed 's,DEBUGBAR_ENABLED=.*,DEBUGBAR_ENABLED='"${DEBUGBAR_ENABLED}"',g' -i /var/www/html/.env
+
   sed 's,DB_DRIVER=.*,DB_DRIVER='"${DB_DRIVER}"',g' -i /var/www/html/.env
   sed 's,DB_HOST=.*,DB_HOST='"${DB_HOST}"',g' -i /var/www/html/.env
   sed 's,DB_UNIX_SOCKET=.*,DB_UNIX_SOCKET='"${DB_UNIX_SOCKET}"',g' -i /var/www/html/.env
