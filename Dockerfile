@@ -3,13 +3,11 @@ FROM nginx:1.15.12-alpine
 EXPOSE 8000
 CMD ["/sbin/entrypoint.sh"]
 
-ARG cachet_url
-ARG cachet_branch
-ARG cachet_commit
+ARG cachet_ver
+ARG archive_url
 
-ENV cachet_commit ${cachet_commit:-0cbaa75e67af8efaf9e5e954235bd3f088a6fd6e}
-ENV cachet_url ${cachet_url:-https://github.com/CachetHQ/Cachet.git}
-ENV cachet_branch ${cachet_branch:-2.4}
+ENV cachet_ver ${cachet_ver:-v2.3.18}
+ENV archive_url ${archive_url:-https://github.com/cachethq/Cachet/archive/${cachet_ver}.tar.gz}
 
 ENV COMPOSER_VERSION 1.6.3
 
@@ -52,7 +50,7 @@ RUN apk add --no-cache --update \
     php7-zlib \
     php7-tokenizer \
     wget sqlite git curl bash grep \
-    supervisor git
+    supervisor
 
 # forward request and error logs to docker log collector
 RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
@@ -81,9 +79,10 @@ RUN wget https://getcomposer.org/installer -O /tmp/composer-setup.php && \
 WORKDIR /var/www/html/
 USER 1001
 
-RUN git clone -b ${cachet_branch} ${cachet_url}  /var/www/html && \
-    git checkout ${cachet_commit} && \
+RUN wget ${archive_url} && \
+    tar xzf ${cachet_ver}.tar.gz --strip-components=1 && \
     chown -R www-data:root /var/www/html && \
+    rm -r ${cachet_ver}.tar.gz && \
     php /bin/composer.phar global require "hirak/prestissimo:^0.3" && \
     php /bin/composer.phar install -o && \
     rm -rf bootstrap/cache/*
