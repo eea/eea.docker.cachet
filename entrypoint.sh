@@ -75,6 +75,7 @@ initialize_system() {
   APP_DEBUG=${APP_DEBUG:-true}
   APP_URL=${APP_URL:-http://localhost}
   APP_LOG=${APP_LOG:-errorlog}
+  APP_TIMEZONE=${APP_TIMEZONE:-}
 
   DB_DRIVER=${DB_DRIVER:-pgsql}
   DB_HOST=${DB_HOST:-postgres}
@@ -142,6 +143,9 @@ initialize_system() {
   sed 's,{{APP_DEBUG}},'"${APP_DEBUG}"',g' -i /var/www/html/.env
   sed 's,{{APP_URL}},'"${APP_URL}"',g' -i /var/www/html/.env
   sed 's,{{APP_LOG}},'"${APP_LOG}"',g' -i /var/www/html/.env
+  sed 's,{{APP_TIMEZONE}},'"${APP_TIMEZONE}"',g' -i /var/www/html/.env
+
+
 
   sed 's,{{DB_DRIVER}},'"${DB_DRIVER}"',g' -i /var/www/html/.env
   sed 's,{{DB_HOST}},'"${DB_HOST}"',g' -i /var/www/html/.env
@@ -204,7 +208,7 @@ initialize_system() {
 
 init_db() {
   echo "Initializing Cachet database ..."
-  php artisan cachet:install --no-interaction
+  php artisan app:install --no-interaction
   check_configured
 }
 
