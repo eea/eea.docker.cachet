@@ -206,8 +206,8 @@ initialize_system() {
   #fix https
   
   if [[ $APP_URL == "https:"* ]]; then 
-	  sed  -i  "/dispatcher->pipeThrough/a tempoplacement        if (\!\\\App::environment('local')) { \\\URL::forceSchema('https'); } " app/Foundation/Providers/AppServiceProvider.php 
-          sed  -i sed 's/tempoplacement//'  app/Foundation/Providers/AppServiceProvider.php 
+	  sed  -i "/dispatcher->pipeThrough/a tempoplacement        if (\!\\\App::environment('local')) { \\\URL::forceSchema('https'); } " /var/www/html/app/Foundation/Providers/AppServiceProvider.php 
+          sed  -i 's/tempoplacement//'  /var/www/html/app/Foundation/Providers/AppServiceProvider.php 
   fi
  
   rm -rf bootstrap/cache/*
