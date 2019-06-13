@@ -203,6 +203,13 @@ initialize_system() {
   # remove empty lines
   sed '/^.*=""$/d'  -i /var/www/html/.env
 
+  #fix https
+  
+  if [[ $APP_URL == "https:"* ]]; then 
+	  sed  -i  "/dispatcher->pipeThrough/a tempoplacement        if (\!\\\App::environment('local')) { \\\URL::forceSchema('https'); } " app/Foundation/Providers/AppServiceProvider.php 
+          sed  -i sed 's/tempoplacement//'  app/Foundation/Providers/AppServiceProvider.php 
+  fi
+ 
   rm -rf bootstrap/cache/*
 }
 

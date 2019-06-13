@@ -9,6 +9,7 @@ USER root
 RUN rm -rf /var/www/html/* 
 COPY conf/.env.docker /var/www/html/.env
 
+
 RUN   wget ${archive_url} && \
     tar xzf ${cachet_ver}.tar.gz --strip-components=1 && \
     chown -R www-data:root /var/www/html && \
@@ -22,6 +23,7 @@ RUN  rm -rf bootstrap/cache/* && \
      php /bin/composer.phar install --no-dev -o --no-scripts && \
      rm -rf bootstrap/cache/*
 
+COPY entrypoint.sh /sbin/entrypoint.sh
 COPY conf/.env.docker /var/www/html/.env
 
 
