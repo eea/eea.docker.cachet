@@ -74,13 +74,11 @@ initialize_system() {
   APP_ENV=${APP_ENV:-production}
   APP_DEBUG=${APP_DEBUG:-false}
   APP_URL=${APP_URL:-http://localhost}
-  APP_TIMEZONE=${APP_TIMEZONE:-UTC}
-  DEBUGBAR_ENABLED=${DEBUGBAR_ENABLED:-false}
-
+  APP_LOG=${APP_LOG:-errorlog}
+  APP_TIMEZONE=${APP_TIMEZONE:-}
 
   DB_DRIVER=${DB_DRIVER:-pgsql}
   DB_HOST=${DB_HOST:-postgres}
-  DB_UNIX_SOCKET=${DB_UNIX_SOCKET:-null}
   DB_DATABASE=${DB_DATABASE:-cachet}
   DB_PREFIX=${DB_PREFIX:-}
   DB_USERNAME=${DB_USERNAME:-postgres}
@@ -104,10 +102,13 @@ initialize_system() {
     DB_PASSWORD=""
   fi
 
-  CACHE_DRIVER=${CACHE_DRIVER:-file}
-  SESSION_DRIVER=${SESSION_DRIVER:-file}
-  QUEUE_DRIVER=${QUEUE_DRIVER:-sync}
+  CACHE_DRIVER=${CACHE_DRIVER:-apc}
 
+  SESSION_DRIVER=${SESSION_DRIVER:-apc}
+  SESSION_DOMAIN=${SESSION_DOMAIN:-apc}
+  SESSION_SECURE_COOKIE=${SESSION_SECURE_COOKIE:-}
+
+  QUEUE_DRIVER=${QUEUE_DRIVER:-database}
   CACHET_EMOJI=${CACHET_EMOJI:-false}
   CACHET_BEACON=${CACHET_BEACON:-false}
   CACHET_AUTO_TWITTER=${CACHET_AUTO_TWITTER:-true}
@@ -124,8 +125,7 @@ initialize_system() {
   REDIS_HOST=${REDIS_HOST:-}
   REDIS_DATABASE=${REDIS_DATABASE:-}
   REDIS_PORT=${REDIS_PORT:-}
-
-  DOCKER=true
+  REDIS_PASSWORD=${REDIS_PASSWORD:-}
 
   GITHUB_TOKEN=${GITHUB_TOKEN:-}
 
@@ -137,48 +137,55 @@ initialize_system() {
   
   TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
 
-
   # configure env file
 
-  sed 's,APP_ENV=.*,APP_ENV='"${APP_ENV}"',g' -i /var/www/html/.env
-  sed 's,APP_DEBUG=.*,APP_DEBUG='"${APP_DEBUG}"',g' -i /var/www/html/.env
-  sed 's,APP_URL=.*,APP_URL='"${APP_URL}"',g' -i /var/www/html/.env
-  sed 's,APP_TIMEZONE=.*,APP_TIMEZONE='"${APP_TIMEZONE}"',g' -i /var/www/html/.env
-  sed 's,DEBUGBAR_ENABLED=.*,DEBUGBAR_ENABLED='"${DEBUGBAR_ENABLED}"',g' -i /var/www/html/.env
+  sed 's,{{APP_ENV}},'"${APP_ENV}"',g' -i /var/www/html/.env
+  sed 's,{{APP_DEBUG}},'"${APP_DEBUG}"',g' -i /var/www/html/.env
+  sed 's,{{APP_URL}},'"${APP_URL}"',g' -i /var/www/html/.env
+  sed 's,{{APP_LOG}},'"${APP_LOG}"',g' -i /var/www/html/.env
+  sed 's,{{APP_TIMEZONE}},'"${APP_TIMEZONE}"',g' -i /var/www/html/.env
 
-  sed 's,DB_DRIVER=.*,DB_DRIVER='"${DB_DRIVER}"',g' -i /var/www/html/.env
-  sed 's,DB_HOST=.*,DB_HOST='"${DB_HOST}"',g' -i /var/www/html/.env
-  sed 's,DB_UNIX_SOCKET=.*,DB_UNIX_SOCKET='"${DB_UNIX_SOCKET}"',g' -i /var/www/html/.env
-  sed 's,DB_DATABASE=.*,DB_DATABASE='"${DB_DATABASE}"',g' -i /var/www/html/.env
-  sed 's,DB_PREFIX=.*,DB_PREFIX='"${DB_PREFIX}"',g' -i /var/www/html/.env
-  sed 's,DB_USERNAME=.*,DB_USERNAME='"${DB_USERNAME}"',g' -i /var/www/html/.env
-  sed 's,DB_PASSWORD=.*,DB_PASSWORD='"${DB_PASSWORD}"',g' -i /var/www/html/.env
-  sed 's,DB_PORT=.*,DB_PORT='"${DB_PORT}"',g' -i /var/www/html/.env
-  sed 's,DB_PREFIX=.*,DB_PREFIX='"${DB_PREFIX}"',g' -i /var/www/html/.env
-  sed 's,CACHE_DRIVER=.*,CACHE_DRIVER='"${CACHE_DRIVER}"',g' -i /var/www/html/.env
-  sed 's,SESSION_DRIVER=.*,SESSION_DRIVER='"${SESSION_DRIVER}"',g' -i /var/www/html/.env
-  sed 's,QUEUE_DRIVER=.*,QUEUE_DRIVER='"${QUEUE_DRIVER}"',g' -i /var/www/html/.env
-  sed 's,CACHET_EMOJI=.*,CACHET_EMOJI='"${CACHET_EMOJI}"',g' -i /var/www/html/.env
-  sed 's,CACHET_BEACON=.*,CACHET_BEACON='"${CACHET_BEACON}"',g' -i /var/www/html/.env
-  sed 's,CACHET_AUTO_TWITTER=.*,CACHET_AUTO_TWITTER='"${CACHET_AUTO_TWITTER}"',g' -i /var/www/html/.env
-  sed 's,MAIL_DRIVER=.*,MAIL_DRIVER='"${MAIL_DRIVER}"',g' -i /var/www/html/.env
-  sed 's,MAIL_HOST=.*,MAIL_HOST='"${MAIL_HOST}"',g' -i /var/www/html/.env
-  sed 's,MAIL_PORT=.*,MAIL_PORT='"${MAIL_PORT}"',g' -i /var/www/html/.env
-  sed 's,MAIL_USERNAME=.*,MAIL_USERNAME='"${MAIL_USERNAME}"',g' -i /var/www/html/.env
-  sed 's,MAIL_PASSWORD=.*,MAIL_PASSWORD='"${MAIL_PASSWORD}"',g' -i /var/www/html/.env
-  sed 's,MAIL_ADDRESS=.*,MAIL_ADDRESS="'${MAIL_ADDRESS}'",g' -i /var/www/html/.env
-  sed "s#MAIL_NAME=.*#MAIL_NAME=\"${MAIL_NAME}\"#g" -i /var/www/html/.env
-  sed 's,MAIL_ENCRYPTION=.*,MAIL_ENCRYPTION='"${MAIL_ENCRYPTION}"',g' -i /var/www/html/.env
 
-  sed 's,REDIS_HOST=.*,REDIS_HOST='"${REDIS_HOST}"',g' -i /var/www/html/.env
-  sed 's,REDIS_DATABASE=.*,REDIS_DATABASE='"${REDIS_DATABASE}"',g' -i /var/www/html/.env
-  sed 's,REDIS_PORT=.*,REDIS_PORT='"${REDIS_PORT}"',g' -i /var/www/html/.env
 
-  sed 's,GITHUB_TOKEN=.*,GITHUB_TOKEN='"${GITHUB_TOKEN}"',g' -i /var/www/html/.env
+  sed 's,{{DB_DRIVER}},'"${DB_DRIVER}"',g' -i /var/www/html/.env
+  sed 's,{{DB_HOST}},'"${DB_HOST}"',g' -i /var/www/html/.env
+  sed 's,{{DB_DATABASE}},'"${DB_DATABASE}"',g' -i /var/www/html/.env
+  sed 's,{{DB_PREFIX}},'"${DB_PREFIX}"',g' -i /var/www/html/.env
+  sed 's,{{DB_USERNAME}},'"${DB_USERNAME}"',g' -i /var/www/html/.env
+  sed 's,{{DB_PASSWORD}},'"${DB_PASSWORD}"',g' -i /var/www/html/.env
+  sed 's,{{DB_PORT}},'"${DB_PORT}"',g' -i /var/www/html/.env
+  sed 's,{{DB_PREFIX}},'"${DB_PREFIX}"',g' -i /var/www/html/.env
 
-  sed 's,NEXMO_KEY=.*,NEXMO_KEY='"${NEXMO_KEY}"',g' -i /var/www/html/.env
-  sed 's,NEXMO_SECRET=.*,NEXMO_SECRET='"${NEXMO_SECRET}"',g' -i /var/www/html/.env
-  sed 's,NEXMO_SMS_FROM=.*,NEXMO_SMS_FROM='"${NEXMO_SMS_FROM}"',g' -i /var/www/html/.env
+  sed 's,{{CACHE_DRIVER}},'"${CACHE_DRIVER}"',g' -i /var/www/html/.env
+
+  sed 's,{{SESSION_DRIVER}},'"${SESSION_DRIVER}"',g' -i /var/www/html/.env
+  sed 's,{{SESSION_DOMAIN}},'"${SESSION_DOMAIN}"',g' -i /var/www/html/.env
+  sed 's,{{SESSION_SECURE_COOKIE}},'"${SESSION_SECURE_COOKIE}"',g' -i /var/www/html/.env
+
+  sed 's,{{QUEUE_DRIVER}},'"${QUEUE_DRIVER}"',g' -i /var/www/html/.env
+  sed 's,{{CACHET_EMOJI}},'"${CACHET_EMOJI}"',g' -i /var/www/html/.env
+  sed 's,{{CACHET_BEACON}},'"${CACHET_BEACON}"',g' -i /var/www/html/.env
+  sed 's,{{CACHET_AUTO_TWITTER}},'"${CACHET_AUTO_TWITTER}"',g' -i /var/www/html/.env
+
+  sed 's,{{MAIL_DRIVER}},'"${MAIL_DRIVER}"',g' -i /var/www/html/.env
+  sed 's,{{MAIL_HOST}},'"${MAIL_HOST}"',g' -i /var/www/html/.env
+  sed 's,{{MAIL_PORT}},'"${MAIL_PORT}"',g' -i /var/www/html/.env
+  sed 's,{{MAIL_USERNAME}},'"${MAIL_USERNAME}"',g' -i /var/www/html/.env
+  sed 's,{{MAIL_PASSWORD}},'"${MAIL_PASSWORD}"',g' -i /var/www/html/.env
+  sed 's,{{MAIL_ADDRESS}},'"${MAIL_ADDRESS}"',g' -i /var/www/html/.env
+  sed 's,{{MAIL_NAME}},'"${MAIL_NAME}"',g' -i /var/www/html/.env
+  sed 's,{{MAIL_ENCRYPTION}},'"${MAIL_ENCRYPTION}"',g' -i /var/www/html/.env
+
+  sed 's,{{REDIS_HOST}},'"${REDIS_HOST}"',g' -i /var/www/html/.env
+  sed 's,{{REDIS_DATABASE}},'"${REDIS_DATABASE}"',g' -i /var/www/html/.env
+  sed 's,{{REDIS_PORT}},'"${REDIS_PORT}"',g' -i /var/www/html/.env
+  sed 's,{{REDIS_PASSWORD}},'"${REDIS_PASSWORD}"',g' -i /var/www/html/.env
+
+  sed 's,{{GITHUB_TOKEN}},'"${GITHUB_TOKEN}"',g' -i /var/www/html/.env
+
+  sed 's,{{NEXMO_KEY}},'"${NEXMO_KEY}"',g' -i /var/www/html/.env
+  sed 's,{{NEXMO_SECRET}},'"${NEXMO_SECRET}"',g' -i /var/www/html/.env
+  sed 's,{{NEXMO_SMS_FROM}},'"${NEXMO_SMS_FROM}"',g' -i /var/www/html/.env
 
   sed 's,{{PHP_MAX_CHILDREN}},'"${PHP_MAX_CHILDREN}"',g' -i /etc/php7/php-fpm.d/www.conf
   
@@ -191,17 +198,24 @@ initialize_system() {
     exit 0
   fi
 
-  sed "s,APP_KEY=.*,APP_KEY=$APP_KEY,g" -i /var/www/html/.env
+  sed "s,{{APP_KEY}},$APP_KEY,g" -i /var/www/html/.env
 
   # remove empty lines
   sed '/^.*=""$/d'  -i /var/www/html/.env
 
+  #fix https
+  
+  if [[ $APP_URL == "https:"* ]]; then 
+	  sed  -i "/dispatcher->pipeThrough/a tempoplacement        if (\!\\\App::environment('local')) { \\\URL::forceSchema('https'); } " /var/www/html/app/Foundation/Providers/AppServiceProvider.php 
+          sed  -i 's/tempoplacement//'  /var/www/html/app/Foundation/Providers/AppServiceProvider.php 
+  fi
+ 
   rm -rf bootstrap/cache/*
 }
 
 init_db() {
   echo "Initializing Cachet database ..."
-  php artisan cachet:install --no-interaction
+  php artisan app:install --no-interaction
   check_configured
 }
 
