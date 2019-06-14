@@ -71,8 +71,8 @@ initialize_system() {
   echo "Initializing Cachet container ..."
 
   APP_KEY=${APP_KEY:-}
-  APP_ENV=${APP_ENV:-development}
-  APP_DEBUG=${APP_DEBUG:-true}
+  APP_ENV=${APP_ENV:-production}
+  APP_DEBUG=${APP_DEBUG:-false}
   APP_URL=${APP_URL:-http://localhost}
   APP_LOG=${APP_LOG:-errorlog}
   APP_TIMEZONE=${APP_TIMEZONE:-}
@@ -110,7 +110,7 @@ initialize_system() {
 
   QUEUE_DRIVER=${QUEUE_DRIVER:-database}
   CACHET_EMOJI=${CACHET_EMOJI:-false}
-  CACHET_BEACON=${CACHET_BEACON:-true}
+  CACHET_BEACON=${CACHET_BEACON:-false}
   CACHET_AUTO_TWITTER=${CACHET_AUTO_TWITTER:-true}
 
   MAIL_DRIVER=${MAIL_DRIVER:-smtp}
