@@ -9,6 +9,7 @@ USER root
 RUN rm -rf /var/www/html/* 
 COPY conf/.env.docker /var/www/html/.env
 
+COPY error/* /var/www/html/public/error/
 
 RUN   wget ${archive_url} && \
     tar xzf ${cachet_ver}.tar.gz --strip-components=1 && \

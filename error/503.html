@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <meta name="env" content="production">
+    <meta name="token" content="7UKNXAysnAfG5fcPeYsPs4PsQLQILpJfJyII6Jzq">
+
+    <link rel="alternate" type="application/atom+xml" href="/atom" title="EEA Systems Status - Atom Feed">
+    <link rel="alternate" type="application/rss+xml" href="/rss" title="EEA Systems Status - RSS Feed">
+
+    <!-- Mobile friendliness -->
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="description" content="Stay up to date with the latest service updates from EEA Systems Status.">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="EEA Systems Status">
+    <meta property="og:image" content="/img/ogimage.png">
+    <meta property="og:description" content="Stay up to date with the latest service updates from EEA Systems Status.">
+
+    <!-- Mobile IE allows us to activate ClearType technology for smoothing fonts for easy reading -->
+    <meta http-equiv="cleartype" content="on">
+
+    <meta name="msapplication-TileColor" content="#7ed321" />
+    <meta name="msapplication-TileImage" content="/img/favicon.png" />
+
+        <link rel="icon" type="image/png" href="/img/favicon.ico">
+    <link rel="shortcut icon" href="/img/favicon.png" type="image/x-icon">
+    
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="57x57" href="/img/apple-touch-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/img/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/img/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/img/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/img/apple-touch-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/img/apple-touch-icon-152x152.png">
+
+    <title>EEA Systems Status</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700&subset=latin" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="/build/dist/css/all-2812406e36.css">
+
+    <style type="text/css">
+body.status-page {
+    background-color: #ffffff;
+    color: #333333;
+        padding-top: 0;
+    }
+p, strong { color: #333333 !important; }
+.reds { color: #ff6f6f !important; }
+.blues { color: #004b87 !important; }
+.greens { color: #7ed321 !important; }
+.yellows { color: #ffd100 !important; }
+.oranges { color: #e69f00 !important; }
+.metrics { color: #0dccc0 !important; }
+.links { color: #6f5091 !important; }
+
+/**
+ * Banner background
+ */
+.app-banner {
+    background-color:  !important;
+}
+
+.app-banner-padding {
+    padding: 20px 0 !important;
+}
+
+/**
+ * Alert overrides.
+ */
+.alert {
+    background-color: #ffd100;
+    border-color: #e5bc00;
+    color: white;
+}
+.alert.alert-success {
+    background-color: #7ed321;
+    border-color: #71bd1d;
+    color: white;
+}
+.alert.alert-info {
+    background-color: #004b87;
+    border-color: #004379;
+    color: white;
+}
+.alert.alert-danger {
+    background-color: #ff6f6f;
+    border-color: #e56363;
+    color: white;
+}
+
+/**
+ * Button Overrides
+ */
+.btn.links {
+    color: #b29200;
+}
+.btn.btn-success {
+    background-color: #7ed321;
+    border-color: #71bd1d;
+    color: white;
+}
+.btn.btn-success.links {
+    color: #589317;
+}
+.btn.btn-success.btn-outline {
+    background-color: transparent;
+    border-color: #7ed321;
+    color: #7ed321;
+}
+.btn.btn-success.btn-outline:hover {
+    background-color: #7ed321;
+    border-color: #71bd1d;
+    color: white;
+}
+.btn.btn-info {
+    background-color: #004b87;
+    border-color: #004379;
+    color: white;
+}
+.btn.btn-info.links {
+    color: #00345e;
+}
+.btn.btn-danger {
+    background-color: #ff6f6f;
+    border-color: #e56363;
+    color: white;
+}
+.btn.btn-danger.links {
+    color: #b24d4d;
+}
+
+/**
+ * Background fills Overrides
+ */
+.component {
+    background-color: #ffffff;
+    border-color: #e5e5e5;
+}
+.sub-component {
+    background-color: #ffffff;
+    border-color: #e5e5e5;
+}
+.incident {
+    background-color: #ffffff;
+    border-color: #e5e5e5;
+}
+.status-icon {
+    background-color: #ffffff;
+    border-color: #e5e5e5;
+}
+.panel.panel-message:before {
+    border-left-color: #ffffff !important;
+    border-right-color: #ffffff !important;
+}
+.panel.panel-message:after {
+    border-left-color: #ffffff !important;
+    border-right-color: #ffffff !important;
+}
+.footer a {
+    color: #333333;
+}
+</style>
+
+    
+        <style type="text/css">
+    .about-app h2 {
+   display: none;
+}
+
+.label-default {
+    background-color: #004b87;
+    font-size: 1em;
+}
+
+.panel-info>.panel-heading {
+    color: #fff !important;
+    background-color: #ffd100;
+    border-color: #ececec;
+}
+
+.panel-heading strong {
+   line-height: 1.8em;
+}
+
+.markdown-body code {
+    font-size: 75%;
+}
+
+body.status-page .timeline .moment .panel .panel-body p:not(:last-child) {
+    margin-bottom: 0px;
+}
+
+.markdown-body hr {
+    height: 1px;
+}
+
+.app-banner {
+   border-bottom: 1px solid #ececec;
+}
+
+.pure-table thead {
+    color: #000;
+    text-align: left;
+}
+
+.pure-table td {
+   border-bottom: 1px solid #cbcbcb;
+}
+
+.pure-table th, .pure-table td {
+    padding: 0.5em 1em;
+}
+
+.pure-table td:first-child, .pure-table th:first-child {
+    border-left-width: 0;
+}
+
+.pure-table-horizontal td, .pure-table-horizontal th {
+    border-width: 0 0 1px;
+    border-bottom-width: 1px;
+    border-left-width: 0px;
+    border-bottom: 1px solid #cbcbcb;
+}
+
+.pure-table td, .pure-table th {
+    border-left: 1px solid #cbcbcb;
+    border-left-width: 1px;
+    border-width: 0 0 0 1px;
+    font-size: inherit;
+    margin: 0;
+    overflow: visible;
+    padding: .5em 1em;
+}
+
+/* hide Last updated tooltip, it is confusing for users as the dates looks old */
+.pull-right div.tooltip {
+  display: none !important;
+}
+    </style>
+    
+    <script type="text/javascript">
+        var Global = {};
+        Global.locale = 'en';
+    </script>
+    <script src="/build/dist/js/all-b2c62d4294.js"></script>
+</head>
+<body class="status-page ">
+    
+    <div class="app-banner">
+    <div class="container">
+        <div class="row app-banner-padding  ">
+            <div class="col-md-12 text-center">
+                                <a href="https://status.eea.europa.eu/" class="links"><img src="data:image/gif;base64, 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" class="banner-image img-responsive"></a>
+                            </div>
+        </div>
+    </div>
+</div>
+
+<div class="navbar navbar-custom" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/"><span>EEA Systems Status</span></a>
+        </div>
+    </div>
+</div>
+
+    <div class="container">
+        <h2>We are upgrading...</h2>
+
+<div class="timeline">
+    <div class="content-wrapper">
+        <div class="moment first">
+            <div class="row event clearfix">
+                <div class="col-sm-1">
+                    <div class="status-icon status-4" data-toggle="tooltip" title="Upgrading/Maintenance" data-placement="left">
+                        <i class="icon ion-ios-lightbulb-outline greens" style="left: 13px"></i>
+                    </div>
+                </div>
+                <div class="col-xs-10 col-xs-offset-2 col-sm-11 col-sm-offset-0">
+                    <div class="panel panel-message incident">
+    <div class="panel-heading">
+                <strong>Servers will be up shortly</strong>
+    </div>
+    <div class="panel-body markdown-body">
+        <p>  <button class="btn btn-primary uppercase" onclick="goBack()">Go Back</button>
+
+<script>
+function goBack() {
+  window.history.back();
+}
+</script>  </p></div>
+  <div class="panel-body markdown-body"><p>
+Kind regards / EEA Web Admin
+</p>
+    </div>
+</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+
+  
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-4">
+                                <p>Powered by <a href="https://cachethq.io" class="links">Cachet</a>.</p>
+                            </div>
+            <div class="col-sm-8">
+                <ul class="list-inline">
+                    <li>helpdesk@eea.europa.eu</li>
+                    <li>
+                        <a class="btn btn-link" href="https://www.eea.europa.eu/legal/privacy">Privacy policy</a>
+                    </li>
+                                        <li>
+                        <a class="btn btn-link" href="/dashboard">Dashboard</a>
+                    </li>
+                    <li>
+                        <a class="btn btn-link" href="/auth/logout">Logout</a>
+                    </li>
+                     <li>
+                        <a class="btn btn-link" href="/rss">RSS</a>
+                    </li>
+                    <li>
+                        <a class="btn btn-link" href="/atom">Atom</a>
+                    </li>
+                  </ul>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Piwik -->
+<script type="text/javascript">
+  var _paq = _paq || [];
+  _paq.push(['trackPageView']);
+  _paq.push(['enableLinkTracking']);
+  (function() {
+    var u="https://matomo.eea.europa.eu";
+    _paq.push(['setTrackerUrl', u+'/piwik.php']);
+    _paq.push(['setSiteId', 44]);
+    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+    g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'/piwik.js'; s.parentNode.insertBefore(g,s);
+  })();
+</script>
+<noscript><p><img src="https://matomo.eea.europa.eu/piwik.php?idsite=44" style="border:0;" alt="" /></p></noscript>
+</body>
+</html>
+
