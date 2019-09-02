@@ -16,6 +16,7 @@ RUN   wget ${archive_url} && \
     chown -R www-data:root /var/www/html && \
     rm -r ${cachet_ver}.tar.gz 
 
+RUN chmod -R 777 /etc/nginx   
 
 USER 1001
 RUN  rm -rf bootstrap/cache/* && \
