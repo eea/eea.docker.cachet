@@ -11,12 +11,11 @@ COPY conf/.env.docker /var/www/html/.env
 
 COPY error/* /var/www/html/public/error/
 
-RUN   wget ${archive_url} && \
+RUN apk add --no-cache --virtual .run-deps nano && \
+    wget ${archive_url} && \
     tar xzf ${cachet_ver}.tar.gz --strip-components=1 && \
     chown -R www-data:root /var/www/html && \
     rm -r ${cachet_ver}.tar.gz 
-
-RUN chmod -R 777 /etc/nginx   
 
 USER 1001
 RUN  rm -rf bootstrap/cache/* && \
@@ -27,6 +26,6 @@ RUN  rm -rf bootstrap/cache/* && \
 
 COPY entrypoint.sh /sbin/entrypoint.sh
 COPY conf/.env.docker /var/www/html/.env
-
+COPY conf/nginx-site.conf /etc/nginx/conf.d/default.conf
 
 
