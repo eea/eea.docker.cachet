@@ -287,24 +287,36 @@ body.status-page .timeline .moment .panel .panel-body p:not(:last-child) {
     <div class="panel-heading">
                 <strong>We're doing some work on the site, it will be back up and running shortly.</strong>
     </div>
-    <div class="panel-heading"> Do not refresh this page, click the button below to return to the site.
+    <div id="back_message" class="panel-heading"></div>
+    <div class="panel-body markdown-body" id="href_message"> </div>
+   <div class="panel-heading"><p>
+     If you continuously see this error page, please visit https://status.eea.europa.eu for ongoing incidents or contact helpdesk@eea.europa.eu with a description of the problem.
+    </p>
+    <p style="font-size: larger">
+    Kind regards / EEA Web Admin
+    </p>
     </div>
-    <div class="panel-body markdown-body">
-        <p>  <button class="btn btn-primary uppercase" onclick="goBack()">Go Back</button>
+
+
 
 <script>
-function goBack() {
-  window.history.back();
-}
-</script>  </p></div>
-  <div class="panel-heading"><p>
-   If you continuously see this error page, please visit https://status.eea.europa.eu for ongoing incidents or contact helpdesk@eea.europa.eu with a description of the problem.
-</p>
+  var url = new URL(window.location.href);
+  var back_to = url.searchParams.get("return_to");
+  if ( back_to ) {
+     if ( back_to.indexOf('http') == -1  ) { 
+	     back_to='https://'+back_to;
+     }
+     document.getElementById("back_message").innerHTML="Do not refresh this page, click the button below to return to the site.";
+     document.getElementById("href_message").innerHTML="<p><a class='btn btn-primary uppercase' href='"+back_to+"'>GO BACK</a>";
+  }
+  else
+  {
+	  document.getElementById("back_message").innerHTML="Do not refresh this page, please retry the original website.";
+  }
 
-<p style="font-size: larger">
-Kind regards / EEA Web Admin
-</p>
-    </div>
+</script>
+    
+
 </div>
                 </div>
             </div>
