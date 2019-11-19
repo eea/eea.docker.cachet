@@ -9,7 +9,7 @@ USER root
 RUN rm -rf /var/www/html/* 
 COPY conf/.env.docker /var/www/html/.env
 
-COPY error/* /var/www/html/public/error/
+COPY error /var/www/html/public/error
 
 RUN apk add --no-cache --virtual .run-deps nano && \
     wget ${archive_url} && \
