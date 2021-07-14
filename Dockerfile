@@ -1,4 +1,6 @@
-FROM cachethq/docker:2.3.15
+FROM cachethq/docker:2.3.18
+
+
 
 
 
@@ -6,16 +8,17 @@ ENV archive_url https://github.com/cachethq/Cachet/archive/v2.3.18.tar.gz
 ENV cachet_ver v2.3.18
 
 USER root
-RUN rm -rf /var/www/html/* 
+RUN rm -rf /var/www/html && \
+    cd /var/www && \
+    apk add --no-cache --virtual .run-deps nano git ca-certificates && \
+    git clone -b 2.4 https://github.com/CachetHQ/Cachet.git html && \
+    chown -R www-data:root /var/www/html && \
+    cd /var/www/html
+
 COPY conf/.env.docker /var/www/html/.env
 
 COPY error /var/www/html/public/error
 
-RUN apk add --no-cache --virtual .run-deps nano && \
-    wget ${archive_url} && \
-    tar xzf ${cachet_ver}.tar.gz --strip-components=1 && \
-    chown -R www-data:root /var/www/html && \
-    rm -r ${cachet_ver}.tar.gz 
 
 USER 1001
 RUN  rm -rf bootstrap/cache/* && \
