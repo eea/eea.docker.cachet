@@ -1,4 +1,4 @@
-FROM cachethq/docker:2.3.18
+FROM cachethq/docker:2.3.15
 
 
 
