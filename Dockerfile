@@ -111,7 +111,8 @@ RUN set -eux; \
 		libxml2-dev \
 		openssl-dev \
 		sqlite-dev \
-                libpng libjpeg-turbo freetype-dev libpng-dev libjpeg-turbo-dev ; \
+                libzip-dev \
+                postgresql-dev icu-dev libpng libjpeg-turbo freetype-dev libpng-dev libjpeg-turbo-dev ; \
 	\
 	export CFLAGS="$PHP_CFLAGS" \
 		CPPFLAGS="$PHP_CPPFLAGS" \
@@ -166,17 +167,30 @@ RUN set -eux; \
 	make clean; \
 	\
 # https://github.com/docker-library/php/issues/692 (copy default example "php.ini" files somewhere easily discoverable)
-	cp -v php.ini-* "$PHP_INI_DIR/"; \
-        docker-php-ext-configure gd \
+	cp -v php.ini-* "$PHP_INI_DIR/"
+
+
+RUN apk add --no-cache --update \
+    mysql-client \
+    postfix \
+    postgresql \
+    postgresql-client \
+    sqlite \
+    sudo \
+    wget sqlite git curl bash grep \
+    supervisor
+
+
+RUN        docker-php-ext-configure gd \
     --with-gd \
     --with-freetype-dir=/usr/include/ \
     --with-png-dir=/usr/include/ \
     --with-jpeg-dir=/usr/include/ ; \
+        docker-php-ext-install gd bcmath  ctype curl  dom fileinfo iconv  intl  json  mbstring opcache pdo pdo_mysql pdo_pgsql pdo_sqlite phar posix session  simplexml soap tokenizer xml xmlwriter zip
 
-        docker-php-ext-install gd; \
 
-        \
-	cd /; \
+RUN 	pecl install apcu; docker-php-ext-enable apcu;  \
+        cd /; \
 	docker-php-source delete; \
 	\
 	runDeps="$( \
@@ -200,17 +214,11 @@ RUN set -eux; \
 
 
 
-RUN php -v
+RUN php -m
 
-RUN apk add --no-cache --update \
-    mysql-client \
-    postfix \
-    postgresql \
-    postgresql-client \
-    sqlite \
-    sudo \
-    wget sqlite git curl bash grep \
-    supervisor
+RUN php --ini
+
+RUN php --info
 
 # forward request and error logs to docker log collector
 RUN mkdir -p /var/log/php7 /var/log/nginx && \ 
