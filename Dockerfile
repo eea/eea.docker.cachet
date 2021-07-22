@@ -70,6 +70,19 @@ ENV PHP_VERSION 7.3.29
 ENV PHP_URL="https://www.php.net/distributions/php-7.3.29.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-7.3.29.tar.xz.asc"
 ENV PHP_SHA256="7db2834511f3d86272dca3daee3f395a5a4afce359b8342aa6edad80e12eb4d0"
 
+
+RUN apk add --no-cache --update \
+    mysql-client \
+    postfix \
+    postgresql \
+    postgresql-client \
+    sqlite \
+    sudo \
+    wget sqlite git curl bash grep \
+    supervisor
+
+
+
 RUN set -eux; \
 	\
 	apk add --no-cache --virtual .fetch-deps gnupg; \
@@ -97,8 +110,6 @@ RUN set -eux; \
 	apk del --no-network .fetch-deps
 
 COPY docker-php-* /usr/local/bin/
-
-
 
 RUN set -eux; \
 	apk add --no-cache --virtual .build-deps \
@@ -167,29 +178,16 @@ RUN set -eux; \
 	make clean; \
 	\
 # https://github.com/docker-library/php/issues/692 (copy default example "php.ini" files somewhere easily discoverable)
-	cp -v php.ini-* "$PHP_INI_DIR/"
-
-
-RUN apk add --no-cache --update \
-    mysql-client \
-    postfix \
-    postgresql \
-    postgresql-client \
-    sqlite \
-    sudo \
-    wget sqlite git curl bash grep \
-    supervisor
-
-
-RUN        docker-php-ext-configure gd \
+	cp -v php.ini-* "$PHP_INI_DIR/"; \
+        \
+       docker-php-ext-configure gd \
     --with-gd \
     --with-freetype-dir=/usr/include/ \
     --with-png-dir=/usr/include/ \
     --with-jpeg-dir=/usr/include/ ; \
-        docker-php-ext-install gd bcmath  ctype curl  dom fileinfo iconv  intl  json  mbstring opcache pdo pdo_mysql pdo_pgsql pdo_sqlite phar posix session  simplexml soap tokenizer xml xmlwriter zip
-
-
-RUN 	pecl install apcu; docker-php-ext-enable apcu;  \
+        docker-php-ext-install gd bcmath  ctype curl  dom fileinfo iconv  intl  json  mbstring opcache pdo pdo_mysql pdo_pgsql pdo_sqlite phar posix session  simplexml soap tokenizer xml xmlwriter zip; \
+\
+	pecl install apcu; docker-php-ext-enable apcu;  \
         cd /; \
 	docker-php-source delete; \
 	\
@@ -211,14 +209,46 @@ RUN 	pecl install apcu; docker-php-ext-enable apcu;  \
 	php --version
 
 
+RUN set -eux; \
+	cd /usr/local/etc; \
+	if [ -d php-fpm.d ]; then \
+		# for some reason, upstream's php-fpm.conf.default has "include=NONE/etc/php-fpm.d/*.conf"
+		sed 's!=NONE/!=!g' php-fpm.conf.default | tee php-fpm.conf > /dev/null; \
+		cp php-fpm.d/www.conf.default php-fpm.d/www.conf; \
+	else \
+		# PHP 5.x doesn't use "include=" by default, so we'll create our own simple config that mimics PHP 7+ for consistency
+		mkdir php-fpm.d; \
+		cp php-fpm.conf.default php-fpm.d/www.conf; \
+		{ \
+			echo '[global]'; \
+			echo 'include=etc/php-fpm.d/*.conf'; \
+		} | tee php-fpm.conf; \
+	fi; \
+	{ \
+		echo '[global]'; \
+		echo 'error_log = /proc/self/fd/2'; \
+		echo; echo '; https://github.com/docker-library/php/pull/725#issuecomment-443540114'; echo 'log_limit = 8192'; \
+		echo; \
+		echo '[www]'; \
+		echo '; if we send this to /proc/self/fd/1, it never appears'; \
+		echo 'access.log = /proc/self/fd/2'; \
+		echo; \
+		echo 'clear_env = no'; \
+		echo; \
+		echo '; Ensure worker stdout and stderr are sent to the main error log.'; \
+		echo 'catch_workers_output = yes'; \
+		echo 'decorate_workers_output = no'; \
+	} | tee php-fpm.d/docker.conf; \
+	{ \
+		echo '[global]'; \
+		echo 'daemonize = no'; \
+		echo; \
+		echo '[www]'; \
+		echo 'listen = 9000'; \
+	} | tee php-fpm.d/zz-docker.conf
 
 
 
-RUN php -m
-
-RUN php --ini
-
-RUN php --info
 
 # forward request and error logs to docker log collector
 RUN mkdir -p /var/log/php7 /var/log/nginx && \ 
@@ -264,7 +294,7 @@ RUN wget ${archive_url} && \
     php /bin/composer.phar install -o && \
     rm -rf bootstrap/cache/*
 
-COPY conf/php-fpm-pool.conf /etc/php7/php-fpm.d/www.conf
+COPY conf/php-fpm-pool.conf /usr/local/etc/php-fpm.d/www.conf
 COPY conf/supervisord.conf /etc/supervisor/supervisord.conf
 COPY conf/nginx.conf /etc/nginx/nginx.conf
 COPY conf/nginx-site.conf /etc/nginx/conf.d/default.conf
