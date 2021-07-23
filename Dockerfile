@@ -308,8 +308,8 @@ COPY error /var/www/html/public/error
 
 RUN chmod g+rwx /var/run/nginx.pid && \
     chmod -R g+rw /var/www /usr/share/nginx/cache /var/cache/nginx /var/lib/nginx/ /etc/php7/php-fpm.d storage && \
-    chown -R www-data:root /var/www/html
-
+    chown -R www-data:root /var/www/html && \
+    chown -R www-data:root /usr/local/etc/php-fpm.d
 
 #set timeout to 2 minutes
 RUN sed -i 's/php artisan queue:work/timeout 120 php artisan queue:work/'  /etc/supervisor/supervisord.conf
