@@ -54,9 +54,6 @@ RUN apk add --no-cache --update \
     wget sqlite git curl bash grep \
     supervisor
 
-RUN find / -name igbinary
-RUN env
-RUN php-config --extension-dir
 
 # forward request and error logs to docker log collector
 RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
