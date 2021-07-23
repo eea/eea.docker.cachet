@@ -1,3 +1,6 @@
+FROM cachethq/docker:2.3.18
+
+
 FROM nginx:1.18-alpine
 
 EXPOSE 8000
@@ -70,30 +73,18 @@ RUN touch /var/run/nginx.pid && \
 
 RUN chown -R www-data:root /etc/php7/php-fpm.d
 
-RUN mkdir -p /var/www/html && \
+RUN mkdir -p /var/www && \
+    rm -rf /var/www/html && \
     mkdir -p /usr/share/nginx/cache && \
     mkdir -p /var/cache/nginx && \
     mkdir -p /var/lib/nginx && \
     chown -R www-data:root /var/www /usr/share/nginx/cache /var/cache/nginx /var/lib/nginx/
 
-# Install composer
-RUN wget https://getcomposer.org/installer -O /tmp/composer-setup.php && \
-    wget https://composer.github.io/installer.sig -O /tmp/composer-setup.sig && \
-    php -r "if (hash('SHA384', file_get_contents('/tmp/composer-setup.php')) !== trim(file_get_contents('/tmp/composer-setup.sig'))) { unlink('/tmp/composer-setup.php'); echo 'Invalid installer' . PHP_EOL; exit(1); }" && \
-    php /tmp/composer-setup.php --version=$COMPOSER_VERSION --install-dir=bin && \
-    php -r "unlink('/tmp/composer-setup.php');"
+COPY --from=0 /var/www/html /var/www/html
 
 WORKDIR /var/www/html/
 USER 1001
 
-RUN wget ${archive_url} && \
-    tar xzf ${cachet_ver}.tar.gz --strip-components=1 && \
-    chown -R www-data:root /var/www/html && \
-    rm -r ${cachet_ver}.tar.gz && \
-    php -v && \
-    php /bin/composer.phar global require "hirak/prestissimo:^0.3" && \
-    php /bin/composer.phar install -o && \
-    rm -rf bootstrap/cache/*
 
 COPY conf/php-fpm-pool.conf /etc/php7/php-fpm.d/www.conf
 COPY conf/supervisord.conf /etc/supervisor/supervisord.conf
