@@ -9,7 +9,7 @@ ARG archive_url
 ENV cachet_ver ${cachet_ver:-v2.3.18}
 ENV archive_url ${archive_url:-https://github.com/cachethq/Cachet/archive/${cachet_ver}.tar.gz}
 
-ENV COMPOSER_VERSION 2.1.3
+ENV COMPOSER_VERSION 1.9.0
 
 RUN apk add --no-cache --update \
     mysql-client \
@@ -91,8 +91,7 @@ RUN wget ${archive_url} && \
     chown -R www-data:root /var/www/html && \
     rm -r ${cachet_ver}.tar.gz && \
     php -v && \
-    echo "if(version_compare(PHP_VERSION, '7.2.0', '>=')) { error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING); }" >> bootstrap/cache/routes.php && \
-    php /bin/composer.phar global require "dompdf/dompdf:^0.8.5" && \
+    php /bin/composer.phar global require "hirak/prestissimo:^0.3" && \
     php /bin/composer.phar install -o && \
     rm -rf bootstrap/cache/*
 
