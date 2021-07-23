@@ -237,9 +237,16 @@ start_system() {
   check_configured
   migrate_db
   seed_db
+
   echo "Starting Cachet! ..."
   php artisan config:cache
+
+  # Hack to fix PHP 7.2, as suggested in: https://github.com/CachetHQ/Cachet/issues/4132
+  php artisan route:cache
+  echo "if(version_compare(PHP_VERSION, '7.2.0', '>=')) { error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING); }" >> bootstrap/cache/routes.php
+  
   /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
+  
 }
 
 start_system
