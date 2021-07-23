@@ -64,11 +64,11 @@ ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
-ENV GPG_KEYS CBAF69F173A0FEA4B537F470D66C9593118BCCB6 F38252826ACD957EF380D39F2F7956BC5DA04B5D
+ENV GPG_KEYS A917B1ECDA84AEC2B568FED6F50ABC807BD5DCD0 528995BFEDFBA7191D46839EF9BA0ADA31CBD89E 1729F83938DA44E27BA0F4D3DBDB397470D12172
 
-ENV PHP_VERSION 7.3.29
-ENV PHP_URL="https://www.php.net/distributions/php-7.3.29.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-7.3.29.tar.xz.asc"
-ENV PHP_SHA256="7db2834511f3d86272dca3daee3f395a5a4afce359b8342aa6edad80e12eb4d0"
+ENV PHP_VERSION 7.1.33
+ENV PHP_URL="https://www.php.net/distributions/php-7.1.33.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-7.1.33.tar.xz.asc"
+ENV PHP_SHA256="bd7c0a9bd5433289ee01fd440af3715309faf583f75832b64fe169c100d52968"
 
 
 RUN apk add --no-cache --update \
@@ -152,10 +152,6 @@ RUN set -eux; \
 		--enable-mbstring \
 # --enable-mysqlnd is included here because it's harder to compile after the fact than extensions are (since it's a plugin for several extensions, not an extension in itself)
 		--enable-mysqlnd \
-# https://wiki.php.net/rfc/argon2_password_hash (7.2+)
-		--with-password-argon2 \
-# https://wiki.php.net/rfc/libsodium
-		--with-sodium=shared \
 # always build against system sqlite3 (https://github.com/php/php-src/commit/6083a387a81dbbd66d6316a3a12a63f06d5f7109)
 		--with-pdo-sqlite=/usr \
 		--with-sqlite3=/usr \
@@ -289,8 +285,6 @@ RUN wget ${archive_url} && \
     tar xzf ${cachet_ver}.tar.gz --strip-components=1 && \
     rm -r ${cachet_ver}.tar.gz && \
     php -v && \
-    echo "if(version_compare(PHP_VERSION, '7.2.0', '>=')) { error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING); }" >> bootstrap/cache/routes.php && \
-    php /bin/composer.phar global require "dompdf/dompdf:^0.8.5" && \
     php /bin/composer.phar install -o && \
     rm -rf bootstrap/cache/*
 
