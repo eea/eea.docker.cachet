@@ -37,7 +37,7 @@ RUN apk add --no-cache \
 
 # ensure www-data user exists
 RUN set -eux; \
-	adduser -u 82 -D -S -G www-data www-data
+	RUN adduser -S -s /bin/bash -u 1001 -G root www-data
 # 82 is the standard uid/gid for "www-data" in Alpine
 # https://git.alpinelinux.org/aports/tree/main/apache2/apache2.pre-install?h=3.14-stable
 # https://git.alpinelinux.org/aports/tree/main/lighttpd/lighttpd.pre-install?h=3.14-stable
@@ -49,10 +49,10 @@ RUN set -eux; \
 # allow running as an arbitrary user (https://github.com/docker-library/php/issues/743)
 	[ ! -d /var/www/html ]; \
 	mkdir -p /var/www/html; \
-	chown www-data:www-data /var/www/html; \
+	chown www-data:root /var/www/html; \
 	chmod 777 /var/www/html
 
-ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data --disable-cgi
+ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-group=root --disable-cgi
 
 # Apply stack smash protection to functions using local buffers and alloca()
 # Make PHP's main executable position-independent (improves ASLR security mechanism, and has no performance impact on x86_64)
