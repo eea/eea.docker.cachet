@@ -37,7 +37,7 @@ RUN apk add --no-cache \
 
 # ensure www-data user exists
 RUN set -eux; \
-	RUN adduser -S -s /bin/bash -u 1001 -G root www-data
+	adduser -S -s /bin/bash -u 1001 -G root www-data
 # 82 is the standard uid/gid for "www-data" in Alpine
 # https://git.alpinelinux.org/aports/tree/main/apache2/apache2.pre-install?h=3.14-stable
 # https://git.alpinelinux.org/aports/tree/main/lighttpd/lighttpd.pre-install?h=3.14-stable
