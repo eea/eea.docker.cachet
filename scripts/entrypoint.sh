@@ -136,6 +136,8 @@ initialize_system() {
   PHP_MAX_CHILDREN=${PHP_MAX_CHILDREN:-5}
   
   TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
+  export TIMEOUT=${TIMEOUT:-180}
+
 
   # configure env file
 
@@ -190,7 +192,10 @@ initialize_system() {
   sed 's,{{PHP_MAX_CHILDREN}},'"${PHP_MAX_CHILDREN}"',g' -i /usr/local/etc/php-fpm.d/www.conf
   
   sed 's,{{TRUSTED_PROXIES}},'"${TRUSTED_PROXIES}"',g' -i /var/www/html/.env
+
+  sed 's,{{TIMEOUT}},'"${TIMEOUT}"',g' -i /var/www/html/.env
   
+
   if [[ -z "${APP_KEY}" || "${APP_KEY}" = "null" ]]; then
     keygen="$(php artisan key:generate --show)"
     APP_KEY=$(echo "${keygen}")
