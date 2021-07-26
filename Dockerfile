@@ -8,7 +8,6 @@ ARG archive_url
 
 ENV cachet_ver ${cachet_ver:-v2.3.18}
 ENV archive_url ${archive_url:-https://github.com/cachethq/Cachet/archive/${cachet_ver}.tar.gz}
-
 ENV COMPOSER_VERSION 2.1.3
 
 
@@ -38,10 +37,6 @@ RUN apk add --no-cache \
 # ensure www-data user exists
 RUN set -eux; \
 	adduser -S -s /bin/bash -u 1001 -G root www-data
-# 82 is the standard uid/gid for "www-data" in Alpine
-# https://git.alpinelinux.org/aports/tree/main/apache2/apache2.pre-install?h=3.14-stable
-# https://git.alpinelinux.org/aports/tree/main/lighttpd/lighttpd.pre-install?h=3.14-stable
-# https://git.alpinelinux.org/aports/tree/main/nginx/nginx.pre-install?h=3.14-stable
 
 ENV PHP_INI_DIR /usr/local/etc/php
 RUN set -eux; \
@@ -109,7 +104,7 @@ RUN set -eux; \
 	\
 	apk del --no-network .fetch-deps
 
-COPY docker-php-* /usr/local/bin/
+COPY scripts/docker-php-* /usr/local/bin/
 
 RUN set -eux; \
 	apk add --no-cache --virtual .build-deps \
@@ -251,8 +246,6 @@ RUN mkdir -p /var/log/php7 /var/log/nginx && \
     ln -sf /dev/stdout /var/log/php7/error.log && \
     ln -sf /dev/stderr /var/log/php7/error.log
 
-#RUN adduser -S -s /bin/bash -u 1001 -G root www-data
-
 RUN echo "www-data	ALL=(ALL:ALL)	NOPASSWD:SETENV:	/usr/sbin/postfix" >> /etc/sudoers
 
 RUN touch /var/run/nginx.pid && \
@@ -276,7 +269,6 @@ RUN wget https://getcomposer.org/installer -O /tmp/composer-setup.php && \
 
 WORKDIR /var/www/html/
 
-
 USER www-data
 
 RUN wget ${archive_url} && \
@@ -291,7 +283,7 @@ COPY conf/supervisord.conf /etc/supervisor/supervisord.conf
 COPY conf/nginx.conf /etc/nginx/nginx.conf
 COPY conf/nginx-site.conf /etc/nginx/conf.d/default.conf
 COPY conf/.env.docker /var/www/html/.env
-COPY entrypoint.sh /sbin/entrypoint.sh
+COPY scripts/entrypoint.sh /sbin/entrypoint.sh
 
 USER root
 
@@ -303,9 +295,6 @@ RUN chmod g+rwx /var/run/nginx.pid && \
     chown -R www-data:root /var/www/html && \
     chown -R www-data:root /usr/local/etc/php-fpm.d && \
     chmod 777 /usr /usr/local /usr/local/etc /usr/local/etc/php-fpm.d
-
-#set timeout to 2 minutes
-RUN sed -i 's/php artisan queue:work/timeout 120 php artisan queue:work/'  /etc/supervisor/supervisord.conf
 
     
 USER 1001
