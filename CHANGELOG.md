@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.3-1.3](https://github.com/eea/eea.docker.cachet/tree/2.3-1.3) (2021-07-27)
+
+- Upgrade base image to NGINX 1.21, using php 7.1 built from source
+- Add TIMEOUT variable for worker job, to fix database IP change bug
+
 ## [v2.3.12](https://github.com/CachetHQ/Docker/tree/v2.3.12) (2017-06-29)
 [Full Changelog](https://github.com/CachetHQ/Docker/compare/v2.3.11...v2.3.12)
 
