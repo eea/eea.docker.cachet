@@ -136,6 +136,8 @@ initialize_system() {
   PHP_MAX_CHILDREN=${PHP_MAX_CHILDREN:-5}
   
   TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
+  export TIMEOUT=${TIMEOUT:-180}
+
 
   # configure env file
 
@@ -187,10 +189,13 @@ initialize_system() {
   sed 's,{{NEXMO_SECRET}},'"${NEXMO_SECRET}"',g' -i /var/www/html/.env
   sed 's,{{NEXMO_SMS_FROM}},'"${NEXMO_SMS_FROM}"',g' -i /var/www/html/.env
 
-  sed 's,{{PHP_MAX_CHILDREN}},'"${PHP_MAX_CHILDREN}"',g' -i /etc/php7/php-fpm.d/www.conf
+  sed 's,{{PHP_MAX_CHILDREN}},'"${PHP_MAX_CHILDREN}"',g' -i /usr/local/etc/php-fpm.d/www.conf
   
   sed 's,{{TRUSTED_PROXIES}},'"${TRUSTED_PROXIES}"',g' -i /var/www/html/.env
+
+  sed 's,{{TIMEOUT}},'"${TIMEOUT}"',g' -i /var/www/html/.env
   
+
   if [[ -z "${APP_KEY}" || "${APP_KEY}" = "null" ]]; then
     keygen="$(php artisan key:generate --show)"
     APP_KEY=$(echo "${keygen}")
@@ -237,9 +242,16 @@ start_system() {
   check_configured
   migrate_db
   seed_db
+
   echo "Starting Cachet! ..."
   php artisan config:cache
+
+  # Hack to fix PHP 7.2, as suggested in: https://github.com/CachetHQ/Cachet/issues/4132
+  php artisan route:cache
+  echo "if(version_compare(PHP_VERSION, '7.2.0', '>=')) { error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING); }" >> bootstrap/cache/routes.php
+  
   /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
+  
 }
 
 start_system
