@@ -121,7 +121,7 @@ RUN set -eux; \
                 postgresql-dev icu-dev libpng libjpeg-turbo freetype-dev libpng-dev libjpeg-turbo-dev ; \
 	\
 	export CFLAGS="$PHP_CFLAGS" \
-		CPPFLAGS="$PHP_CPPFLAGS" \
+		CPPFLAGS="$PHP_CPPFLAGS -DU_DEFINE_FALSE_AND_TRUE=1" \
 		LDFLAGS="$PHP_LDFLAGS" \
 	; \
 	docker-php-source extract; \
@@ -178,7 +178,7 @@ RUN set -eux; \
     --with-jpeg-dir=/usr/include/ ; \
         docker-php-ext-install gd bcmath  ctype curl  dom fileinfo iconv  intl  json  mbstring opcache pdo pdo_mysql pdo_pgsql pdo_sqlite phar posix session  simplexml soap tokenizer xml xmlwriter zip; \
 \
-	pecl install apcu; docker-php-ext-enable apcu;  \
+	curl -fsSL -o /tmp/apcu.tgz https://pecl.php.net/get/apcu-5.1.21.tgz; pecl install /tmp/apcu.tgz; rm -f /tmp/apcu.tgz; docker-php-ext-enable apcu;  \
         cd /; \
 	docker-php-source delete; \
 	\
@@ -193,7 +193,7 @@ RUN set -eux; \
         apk del --no-network .build-deps; \
 	\
 # update pecl channel definitions https://github.com/docker-library/php/issues/443
-	pecl update-channels; \
+	pecl update-channels || true; \
 	rm -rf /tmp/pear ~/.pearrc; \
 	\
 # smoke test
