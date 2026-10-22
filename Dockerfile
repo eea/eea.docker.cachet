@@ -1,4 +1,4 @@
-FROM nginx:1.21-alpine
+FROM nginx:1.30.6-alpine3.24
 
 EXPOSE 8000
 CMD ["/sbin/entrypoint.sh"]
@@ -120,12 +120,22 @@ RUN set -eux; \
                 libzip-dev \
                 postgresql-dev icu-dev libpng libjpeg-turbo freetype-dev libpng-dev libjpeg-turbo-dev ; \
 	\
-	export CFLAGS="$PHP_CFLAGS" \
+# PHP 7.1 predates GCC 14+/C23, ICU 68+ and OpenSSL 3: build as gnu17 with GCC's old leniency,
+# and let ICU define TRUE/FALSE again
+	export CFLAGS="$PHP_CFLAGS -std=gnu17 -fpermissive" \
+		CXXFLAGS="$PHP_CFLAGS -std=gnu++17" \
 		CPPFLAGS="$PHP_CPPFLAGS -DU_DEFINE_FALSE_AND_TRUE=1" \
 		LDFLAGS="$PHP_LDFLAGS" \
 	; \
+# freetype no longer ships freetype-config, which PHP 7.1's gd configure needs
+	printf '#!/bin/sh\ncase "$1" in --cflags) exec pkg-config --cflags freetype2;; --libs) exec pkg-config --libs freetype2;; --version|--ftversion) exec pkg-config --modversion freetype2;; esac\n' > /usr/local/bin/freetype-config; \
+	chmod +x /usr/local/bin/freetype-config; \
 	docker-php-source extract; \
 	cd /usr/src/php; \
+# ICU 70+ declares BreakIterator::operator== as returning bool
+	sed -i 's/UBool \(CodePointBreakIterator::\)\?operator==/bool \1operator==/' ext/intl/breakiterator/codepointiterator_internal.h ext/intl/breakiterator/codepointiterator_internal.cpp; \
+# OpenSSL 3 removed RSA_SSLV23_PADDING
+	sed -i 's/^\(\tREGISTER_LONG_CONSTANT("OPENSSL_SSLV23_PADDING".*\)$/#ifdef RSA_SSLV23_PADDING\n\1\n#endif/' ext/openssl/openssl.c; \
 	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
 	./configure \
 		--build="$gnuArch" \
@@ -140,6 +150,8 @@ RUN set -eux; \
 		\
 # https://github.com/docker-library/php/issues/822
 		--with-pic \
+# PHP 7.1's bundled PEAR installer no longer works on current Alpine; extensions are built with docker-php-ext-install instead
+		--without-pear \
 		\
 # --enable-ftp is included here because ftp_ssl_connect() needs ftp to be compiled statically (see https://github.com/docker-library/php/issues/236)
 		--enable-ftp \
@@ -178,9 +190,12 @@ RUN set -eux; \
     --with-jpeg-dir=/usr/include/ ; \
         docker-php-ext-install gd bcmath  ctype curl  dom fileinfo iconv  intl  json  mbstring opcache pdo pdo_mysql pdo_pgsql pdo_sqlite phar posix session  simplexml soap tokenizer xml xmlwriter zip; \
 \
-	curl -fsSL -o /tmp/apcu.tgz https://pecl.php.net/get/apcu-5.1.21.tgz; pecl install /tmp/apcu.tgz; rm -f /tmp/apcu.tgz; docker-php-ext-enable apcu;  \
+	mkdir -p /usr/src/php/ext/apcu; \
+	curl -fsSL https://pecl.php.net/get/apcu-5.1.21.tgz | tar xz -C /usr/src/php/ext/apcu --strip-components=1; \
+	docker-php-ext-install apcu; \
         cd /; \
 	docker-php-source delete; \
+	rm -f /usr/local/bin/freetype-config; \
 	\
 	runDeps="$( \
 		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local \
@@ -192,8 +207,6 @@ RUN set -eux; \
 	\
         apk del --no-network .build-deps; \
 	\
-# update pecl channel definitions https://github.com/docker-library/php/issues/443
-	pecl update-channels || true; \
 	rm -rf /tmp/pear ~/.pearrc; \
 	\
 # smoke test
