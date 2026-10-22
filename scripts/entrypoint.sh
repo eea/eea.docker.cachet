@@ -3,257 +3,104 @@ set -o errexit -o nounset -o pipefail
 
 [ "${DEBUG:-false}" == true ] && set -x
 
-check_database_connection() {
-  echo "Attempting to connect to database ..."
-  case "${DB_DRIVER}" in
-    mysql)
-      prog="mysqladmin -h ${DB_HOST} -u ${DB_USERNAME} ${DB_PASSWORD:+-p$DB_PASSWORD} -P ${DB_PORT} status"
-      ;;
-    pgsql)
-      prog="/usr/bin/pg_isready"
-      prog="${prog} -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -d ${DB_DATABASE} -t 1"
-      ;;
-    sqlite)
-      prog="touch /var/www/html/database/database.sqlite"
+cd "${APP_DIR:-/var/www/html}"
+
+# Map the variable names used by the v2 image / Helm chart to Laravel's names,
+# so existing deployments keep working. New names win when both are set.
+map_env() {
+  local new="$1" old="$2"
+  if [[ -z "${!new:-}" && -n "${!old:-}" ]]; then
+    export "${new}=${!old}"
+  fi
+}
+
+configure() {
+  map_env DB_CONNECTION DB_DRIVER
+  map_env MAIL_MAILER MAIL_DRIVER
+  map_env MAIL_FROM_ADDRESS MAIL_ADDRESS
+  map_env MAIL_FROM_NAME MAIL_NAME
+  map_env LOG_CHANNEL APP_LOG
+  map_env APP_TIMEZONE TZ
+  map_env CACHE_STORE CACHE_DRIVER
+  map_env QUEUE_CONNECTION QUEUE_DRIVER
+  map_env CACHET_TRUSTED_PROXIES TRUSTED_PROXIES
+
+  # v2 defaults that no longer exist in v3
+  [[ "${CACHE_STORE:-}" == apc ]] && unset CACHE_STORE
+  [[ "${SESSION_DRIVER:-}" == apc ]] && unset SESSION_DRIVER
+  [[ "${MAIL_ENCRYPTION:-}" == "" ]] && unset MAIL_ENCRYPTION
+
+  export APP_ENV="${APP_ENV:-production}"
+  export APP_DEBUG="${APP_DEBUG:-false}"
+  export APP_URL="${APP_URL:-http://localhost}"
+  export LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
+  export DB_CONNECTION="${DB_CONNECTION:-pgsql}"
+  export DB_HOST="${DB_HOST:-postgres}"
+  export DB_PREFIX="${DB_PREFIX:-}"
+  export CACHE_STORE="${CACHE_STORE:-database}"
+  export SESSION_DRIVER="${SESSION_DRIVER:-database}"
+  export QUEUE_CONNECTION="${QUEUE_CONNECTION:-database}"
+  export CACHET_BEACON="${CACHET_BEACON:-false}"
+  # laravel/nightwatch is installed upstream and enabled by default; without an
+  # agent it instruments every request and times out reaching 127.0.0.1:2407
+  export NIGHTWATCH_ENABLED="${NIGHTWATCH_ENABLED:-false}"
+  export CACHET_DOCKER=true
+  # TLS is terminated by the ingress in front of the container
+  export CACHET_TRUSTED_PROXIES="${CACHET_TRUSTED_PROXIES:-*}"
+
+  case "${DB_CONNECTION}" in
+    pgsql) export DB_PORT="${DB_PORT:-5432}" ;;
+    mysql | mariadb) export DB_PORT="${DB_PORT:-3306}" ;;
   esac
-  timeout=60
-  while ! ${prog} >/dev/null 2>&1
-  do
-    timeout=$(( timeout - 1 ))
-    if [[ "$timeout" -eq 0 ]]; then
-      echo
-      echo "Could not connect to database server! Aborting..."
+
+  # read by php-fpm-pool.conf and supervisord.conf
+  export PHP_MAX_CHILDREN="${PHP_MAX_CHILDREN:-5}"
+  export PHP_MAX_EXECUTION_TIME="${PHP_MAX_EXECUTION_TIME:-60}"
+  export TIMEOUT="${TIMEOUT:-180}"
+
+  if [[ -z "${APP_KEY:-}" || "${APP_KEY}" == "null" ]]; then
+    echo "ERROR: APP_KEY is not set. Generate one with:" >&2
+    echo "  docker run --rm --entrypoint php <image> artisan key:generate --show" >&2
+    echo "When upgrading from Cachet v2, reuse the v2 APP_KEY." >&2
+    exit 1
+  fi
+}
+
+wait_for_database() {
+  [[ "${DB_CONNECTION}" == sqlite ]] && return 0
+  echo "Waiting for database ${DB_HOST}:${DB_PORT} ..."
+  local tries=60
+  until php -r '
+      $dsn = sprintf("%s:host=%s;port=%s;dbname=%s",
+          getenv("DB_CONNECTION") === "pgsql" ? "pgsql" : "mysql",
+          getenv("DB_HOST"), getenv("DB_PORT"), getenv("DB_DATABASE"));
+      new PDO($dsn, getenv("DB_USERNAME"), getenv("DB_PASSWORD"));' >/dev/null 2>&1; do
+    tries=$((tries - 1))
+    if [[ "${tries}" -le 0 ]]; then
+      echo "Could not connect to the database. Aborting." >&2
       exit 1
     fi
-    echo -n "."
-    sleep 1
+    sleep 2
   done
-  echo
 }
 
-checkdbinitmysql() {
-    table=sessions
-    if [[ "$(mysql -N -s -h "${DB_HOST}" -u "${DB_USERNAME}" "${DB_PASSWORD:+-p$DB_PASSWORD}" "${DB_DATABASE}" -P "${DB_PORT}" -e \
-        "select count(*) from information_schema.tables where \
-            table_schema='${DB_DATABASE}' and table_name='${DB_PREFIX}${table}';")" -eq 1 ]]; then
-        echo "Table ${DB_PREFIX}${table} exists! ..."
-    else
-        echo "Table ${DB_PREFIX}${table} does not exist! ..."
-        init_db
-    fi
-
-}
-
-checkdbinitpsql() {
-    table=sessions
-    export PGPASSWORD=${DB_PASSWORD}
-    if [[ "$(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USERNAME}" -d "${DB_DATABASE}" -c "SELECT to_regclass('${DB_PREFIX}${table}');" | grep -c "${DB_PREFIX}${table}")" -eq 1 ]]; then
-        echo "Table ${DB_PREFIX}${table} exists! ..."
-    else
-        echo "Table ${DB_PREFIX}${table} does not exist! ..."
-        init_db
-    fi
-
-}
-
-check_configured() {
-  case "${DB_DRIVER}" in
-    mysql)
-      checkdbinitmysql
-      ;;
-    pgsql)
-      checkdbinitpsql
-      ;;
-  esac
-}
-
-initialize_system() {
-  echo "Initializing Cachet container ..."
-
-  APP_KEY=${APP_KEY:-}
-  APP_ENV=${APP_ENV:-production}
-  APP_DEBUG=${APP_DEBUG:-false}
-  APP_URL=${APP_URL:-http://localhost}
-  APP_LOG=${APP_LOG:-errorlog}
-  APP_TIMEZONE=${APP_TIMEZONE:-}
-
-  DB_DRIVER=${DB_DRIVER:-pgsql}
-  DB_HOST=${DB_HOST:-postgres}
-  DB_DATABASE=${DB_DATABASE:-cachet}
-  DB_PREFIX=${DB_PREFIX:-}
-  DB_USERNAME=${DB_USERNAME:-postgres}
-  DB_PASSWORD=${DB_PASSWORD:-postgres}
-  DB_PORT=${DB_PORT:-}
-  DB_PREFIX=${DB_PREFIX:-}
-
-  if [[ "${DB_DRIVER}" = "pgsql" ]]; then
-    DB_PORT=${DB_PORT:-5432}
+migrate() {
+  if [[ "${RUN_MIGRATIONS:-true}" == true ]]; then
+    # the settings cache lives in the database cache table, which does not
+    # exist yet on a new database: keep it off until the migrations ran.
+    # v2-upgrade.php is a no-op unless the database has the Cachet v2 schema.
+    SETTINGS_CACHE_ENABLED=false CACHET_SETTINGS_CACHE=false php /usr/local/share/cachet/v2-upgrade.php
+    SETTINGS_CACHE_ENABLED=false CACHET_SETTINGS_CACHE=false php artisan migrate --force --no-interaction
   fi
-
-  if [[ "${DB_DRIVER}" = "mysql" ]]; then
-    DB_PORT=${DB_PORT:-3306}
-  fi
-
-  if [[ "${DB_DRIVER}" = "sqlite" ]]; then
-    DB_DATABASE=""
-    DB_HOST=""
-    DB_PORT=""
-    DB_USERNAME=""
-    DB_PASSWORD=""
-  fi
-
-  CACHE_DRIVER=${CACHE_DRIVER:-apc}
-
-  SESSION_DRIVER=${SESSION_DRIVER:-apc}
-  SESSION_DOMAIN=${SESSION_DOMAIN:-apc}
-  SESSION_SECURE_COOKIE=${SESSION_SECURE_COOKIE:-}
-
-  QUEUE_DRIVER=${QUEUE_DRIVER:-database}
-  CACHET_EMOJI=${CACHET_EMOJI:-false}
-  CACHET_BEACON=${CACHET_BEACON:-false}
-  CACHET_AUTO_TWITTER=${CACHET_AUTO_TWITTER:-true}
-
-  MAIL_DRIVER=${MAIL_DRIVER:-smtp}
-  MAIL_HOST=${MAIL_HOST:-localhost}
-  MAIL_PORT=${MAIL_PORT:-25}
-  MAIL_USERNAME=${MAIL_USERNAME:-}
-  MAIL_PASSWORD=${MAIL_PASSWORD:-}
-  MAIL_ADDRESS=${MAIL_ADDRESS:-}
-  MAIL_NAME=${MAIL_NAME:-}
-  MAIL_ENCRYPTION=${MAIL_ENCRYPTION:-}
-
-  REDIS_HOST=${REDIS_HOST:-}
-  REDIS_DATABASE=${REDIS_DATABASE:-}
-  REDIS_PORT=${REDIS_PORT:-}
-  REDIS_PASSWORD=${REDIS_PASSWORD:-}
-
-  GITHUB_TOKEN=${GITHUB_TOKEN:-}
-
-  NEXMO_KEY=${NEXMO_KEY:-}
-  NEXMO_SECRET=${NEXMO_SECRET:-}
-  NEXMO_SMS_FROM=${NEXMO_SMS_FROM:-Cachet}
-
-  PHP_MAX_CHILDREN=${PHP_MAX_CHILDREN:-5}
-  
-  TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
-  export TIMEOUT=${TIMEOUT:-180}
-
-
-  # configure env file
-
-  sed 's,{{APP_ENV}},'"${APP_ENV}"',g' -i /var/www/html/.env
-  sed 's,{{APP_DEBUG}},'"${APP_DEBUG}"',g' -i /var/www/html/.env
-  sed 's,{{APP_URL}},'"${APP_URL}"',g' -i /var/www/html/.env
-  sed 's,{{APP_LOG}},'"${APP_LOG}"',g' -i /var/www/html/.env
-  sed 's,{{APP_TIMEZONE}},'"${APP_TIMEZONE}"',g' -i /var/www/html/.env
-
-
-
-  sed 's,{{DB_DRIVER}},'"${DB_DRIVER}"',g' -i /var/www/html/.env
-  sed 's,{{DB_HOST}},'"${DB_HOST}"',g' -i /var/www/html/.env
-  sed 's,{{DB_DATABASE}},'"${DB_DATABASE}"',g' -i /var/www/html/.env
-  sed 's,{{DB_PREFIX}},'"${DB_PREFIX}"',g' -i /var/www/html/.env
-  sed 's,{{DB_USERNAME}},'"${DB_USERNAME}"',g' -i /var/www/html/.env
-  sed 's,{{DB_PASSWORD}},'"${DB_PASSWORD}"',g' -i /var/www/html/.env
-  sed 's,{{DB_PORT}},'"${DB_PORT}"',g' -i /var/www/html/.env
-  sed 's,{{DB_PREFIX}},'"${DB_PREFIX}"',g' -i /var/www/html/.env
-
-  sed 's,{{CACHE_DRIVER}},'"${CACHE_DRIVER}"',g' -i /var/www/html/.env
-
-  sed 's,{{SESSION_DRIVER}},'"${SESSION_DRIVER}"',g' -i /var/www/html/.env
-  sed 's,{{SESSION_DOMAIN}},'"${SESSION_DOMAIN}"',g' -i /var/www/html/.env
-  sed 's,{{SESSION_SECURE_COOKIE}},'"${SESSION_SECURE_COOKIE}"',g' -i /var/www/html/.env
-
-  sed 's,{{QUEUE_DRIVER}},'"${QUEUE_DRIVER}"',g' -i /var/www/html/.env
-  sed 's,{{CACHET_EMOJI}},'"${CACHET_EMOJI}"',g' -i /var/www/html/.env
-  sed 's,{{CACHET_BEACON}},'"${CACHET_BEACON}"',g' -i /var/www/html/.env
-  sed 's,{{CACHET_AUTO_TWITTER}},'"${CACHET_AUTO_TWITTER}"',g' -i /var/www/html/.env
-
-  sed 's,{{MAIL_DRIVER}},'"${MAIL_DRIVER}"',g' -i /var/www/html/.env
-  sed 's,{{MAIL_HOST}},'"${MAIL_HOST}"',g' -i /var/www/html/.env
-  sed 's,{{MAIL_PORT}},'"${MAIL_PORT}"',g' -i /var/www/html/.env
-  sed 's,{{MAIL_USERNAME}},'"${MAIL_USERNAME}"',g' -i /var/www/html/.env
-  sed 's,{{MAIL_PASSWORD}},'"${MAIL_PASSWORD}"',g' -i /var/www/html/.env
-  sed 's,{{MAIL_ADDRESS}},'"${MAIL_ADDRESS}"',g' -i /var/www/html/.env
-  sed 's,{{MAIL_NAME}},'"${MAIL_NAME}"',g' -i /var/www/html/.env
-  sed 's,{{MAIL_ENCRYPTION}},'"${MAIL_ENCRYPTION}"',g' -i /var/www/html/.env
-
-  sed 's,{{REDIS_HOST}},'"${REDIS_HOST}"',g' -i /var/www/html/.env
-  sed 's,{{REDIS_DATABASE}},'"${REDIS_DATABASE}"',g' -i /var/www/html/.env
-  sed 's,{{REDIS_PORT}},'"${REDIS_PORT}"',g' -i /var/www/html/.env
-  sed 's,{{REDIS_PASSWORD}},'"${REDIS_PASSWORD}"',g' -i /var/www/html/.env
-
-  sed 's,{{GITHUB_TOKEN}},'"${GITHUB_TOKEN}"',g' -i /var/www/html/.env
-
-  sed 's,{{NEXMO_KEY}},'"${NEXMO_KEY}"',g' -i /var/www/html/.env
-  sed 's,{{NEXMO_SECRET}},'"${NEXMO_SECRET}"',g' -i /var/www/html/.env
-  sed 's,{{NEXMO_SMS_FROM}},'"${NEXMO_SMS_FROM}"',g' -i /var/www/html/.env
-
-  sed 's,{{PHP_MAX_CHILDREN}},'"${PHP_MAX_CHILDREN}"',g' -i /usr/local/etc/php-fpm.d/www.conf
-  
-  sed 's,{{TRUSTED_PROXIES}},'"${TRUSTED_PROXIES}"',g' -i /var/www/html/.env
-
-  sed 's,{{TIMEOUT}},'"${TIMEOUT}"',g' -i /var/www/html/.env
-  
-
-  if [[ -z "${APP_KEY}" || "${APP_KEY}" = "null" ]]; then
-    keygen="$(php artisan key:generate --show)"
-    APP_KEY=$(echo "${keygen}")
-    echo "ERROR: Please set the 'APP_KEY=${APP_KEY}' environment variable at runtime or in docker-compose.yml and re-launch"
-    exit 0
-  fi
-
-  sed "s,{{APP_KEY}},$APP_KEY,g" -i /var/www/html/.env
-
-  # remove empty lines
-  sed '/^.*=""$/d'  -i /var/www/html/.env
-
-  #fix https
-  
-  if [[ $APP_URL == "https:"* ]]; then 
-	  sed  -i "/dispatcher->pipeThrough/a tempoplacement        if (\!\\\App::environment('local')) { \\\URL::forceSchema('https'); } " /var/www/html/app/Foundation/Providers/AppServiceProvider.php 
-          sed  -i 's/tempoplacement//'  /var/www/html/app/Foundation/Providers/AppServiceProvider.php 
-  fi
- 
-  rm -rf bootstrap/cache/*
 }
 
-init_db() {
-  echo "Initializing Cachet database ..."
-  php artisan app:install --no-interaction
-  check_configured
-}
+configure
 
-migrate_db() {
-  force=""
-  if [[ "${FORCE_MIGRATION:-false}" == true ]]; then
-    force="--force"
-  fi
-  php artisan migrate ${force}
-}
+if [[ "${1:-}" == supervisord ]]; then
+  wait_for_database
+  migrate
+  php artisan optimize
+  echo "Starting Cachet ${CACHET_REF:-} ..."
+fi
 
-seed_db() {
-  php artisan db:seed
-}
-
-start_system() {
-  initialize_system
-  check_database_connection
-  check_configured
-  migrate_db
-  seed_db
-
-  echo "Starting Cachet! ..."
-  php artisan config:cache
-
-  # Hack to fix PHP 7.2, as suggested in: https://github.com/CachetHQ/Cachet/issues/4132
-  php artisan route:cache
-  echo "if(version_compare(PHP_VERSION, '7.2.0', '>=')) { error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING); }" >> bootstrap/cache/routes.php
-  
-  /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
-  
-}
-
-start_system
-
-exit 0
+exec "$@"

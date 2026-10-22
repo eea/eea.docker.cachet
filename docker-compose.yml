@@ -1,34 +1,35 @@
-version: "3"
-
 services:
   postgres:
-    image: postgres:9.5
+    image: eeacms/postgres:17s
     volumes:
-      - /var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=postgres
+      - POSTGRES_DBNAME=cachet
+      - POSTGRES_DBUSER=cachet
+      - POSTGRES_DBPASS=cachet
       - POSTGRES_PASSWORD=postgres
     restart: always
   cachet:
     build:
       context: .
-      args:
-        - cachet_ver=v2.3.18
     ports:
-      - 80:8000
-    links:
-      - postgres:postgres
+      - 8000:8000
     environment:
-      - DB_DRIVER=pgsql
+      - DB_CONNECTION=pgsql
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_DATABASE=postgres
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=postgres
+      - DB_DATABASE=cachet
+      - DB_USERNAME=cachet
+      - DB_PASSWORD=cachet
       - DB_PREFIX=chq_
-      - APP_KEY=${APP_KEY:-null}
-      - APP_LOG=errorlog
-      - DEBUG=false
+      - APP_KEY=${APP_KEY:?set APP_KEY, see README}
+      - APP_URL=http://localhost:8000
+    volumes:
+      - cachet-uploads:/var/www/html/storage/app/public
     depends_on:
       - postgres
     restart: on-failure
+
+volumes:
+  postgres-data:
+  cachet-uploads:

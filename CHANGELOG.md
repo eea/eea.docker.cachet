@@ -1,5 +1,15 @@
 # Change Log
 
+## [3](https://github.com/eea/eea.docker.cachet/tree/3) (2026-10-22)
+
+- Cachet v3 (Laravel 13, pinned to cachethq/cachet `40bd0819`), PHP 8.3.36 on Alpine 3.24, nginx + php-fpm + queue worker + scheduler under supervisord, runs as uid 1001 on port 8000
+- Configuration from environment variables; the v2 names used by the Helm chart (`DB_DRIVER`, `MAIL_DRIVER`, `MAIL_ADDRESS`, `MAIL_NAME`, `APP_LOG`, `TZ`, `TRUSTED_PROXIES`) are still accepted
+- Upgrades a Cachet v2.3 database in place at startup (`scripts/v2-upgrade.php` + EEA migrations): keeps the `chq_` prefix, admins, incident and maintenance component links, public component groups, long component descriptions, unverified subscribers and the status page banner
+- Performance: register Cachet's settings classes so settings are cached (96 → 25 queries per page), 10s nginx cache for anonymous public status pages
+- Health check on `/up`; `session.upload_progress` disabled (GHSA-6wmf-4rv5-p3rp)
+- Tested with PostgreSQL 17 (eeacms/postgres:17s); see README for the upgrade procedure from 9.6
+- cachet-monitor needs eeacms/cachet-monitor:3 (Cachet v3 API support)
+
 ## [2.3-1.3](https://github.com/eea/eea.docker.cachet/tree/2.3-1.3) (2021-07-27)
 
 - Upgrade base image to NGINX 1.21, using php 7.1 built from source
